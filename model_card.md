@@ -675,6 +675,20 @@ has real ways to go wrong. What I found, what already guards against it, and wha
 
 ## 12. What Surprised Me While Testing Reliability
 
+**Testing results (VibeCheck 2.0):**
+
+| Method | Result |
+|---|---|
+| Automated tests (`pytest`) | **25 of 25 pass**: guardrails, agent loop, negation parsing, confidence, the Claude loop (with a fake client), and the evaluation set as a regression test |
+| Reliability evaluation (`python -m src.evaluate`), 13 labeled requests | **11 of 13 at first (31/34 criteria) → 13 of 13 after the fix (34/34)**. Both failures were negation phrasings ("anything but country", "don't want anything too intense"), fixed in the planner |
+| Confidence scoring | Average **0.55 → 0.60** after the fix. 9 of 13 runs flagged for human review: 2 rejected inputs, 2 requests with nothing usable, 5 low-confidence results from thin genres |
+| Guardrails | Empty and over-500-character requests are rejected. An unknown genre (k-pop) and a prompt-injection attempt are flagged, not obeyed |
+| Not tested | The live Claude API path (only its loop logic is tested, with a fake client) |
+
+Full tables: README, "Reliability and Evaluation". Raw outputs: `evidence/`.
+
+**What surprised me:**
+
 - **The unit tests passed while the evaluation failed.** All 17 unit tests passed, but the
   first run of the 13-case evaluation set failed 2 cases ("anything but country" and "don't want
   anything too intense"). My tests checked the phrasings I had in mind, not how people actually
