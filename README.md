@@ -124,6 +124,7 @@ flowchart TD
 | `src/main.py` | Command-line entry point |
 | `src/agent.py` | Agent loop, Claude planner, rule-based planner, tool wrappers |
 | `src/guardrails.py` | Input validation, profile cleanup, output verification |
+| `src/evaluate.py` | Reliability evaluation: 13 labeled requests with pass/fail criteria |
 | `src/recommender.py` | VibeCheck 1.0 scoring engine, used as the agent's tool |
 | `data/songs.csv` | 20-song catalog (17 genres, 16 moods) |
 | `tests/` | `test_agent.py` (agent and guardrails) and `test_recommender.py` (engine) |
@@ -191,6 +192,12 @@ You need Python 3.9 or newer and git. Run every command from the project root.
    The tests never call the real API. The Claude planner is tested with a scripted fake client, so
    no key or network is needed.
 
+7. **Run the reliability evaluation** (13 labeled requests, printed as a markdown table):
+
+   ```bash
+   python -m src.evaluate
+   ```
+
 ---
 
 ## Sample Interactions
@@ -210,6 +217,7 @@ Profile: {'favorite_mood': 'chill', 'target_energy': 0.35}
 Constraints: avoid ['melancholic', 'sad'], energy range [0.15, 0.55]
 ================================================================
 Looked for a chill mood, low energy. Ruled out: melancholic, sad. Replaced 2 song(s) that broke your constraints.
+Confidence: 0.82 (high)
 
 1. Library Rain by Paper Lanterns  [lofi / chill]        Score: 2.50 / 6.00
      - mood match: chill (+1.0)
@@ -245,6 +253,7 @@ Profile: {'target_energy': 0.85}
 Constraints: avoid ['metal'], energy range [0.65, 1.0]
 ================================================================
 Looked for high energy. Ruled out: metal.
+Confidence: 0.95 (high)
 
 1. Flamenco Fire by Lucia Torres  [latin / passionate]   Score: 1.50 / 6.00
 2. Sunrise City by Neon Echo  [pop / happy]              Score: 1.46 / 6.00
@@ -264,6 +273,7 @@ run is **flagged for human review**.
 Profile: {'target_energy': 0.85}
 ================================================================
 Looked for high energy. Note: 'k-pop' is not a genre in the catalog, so it was dropped.
+Confidence: 0.76 (high)
 
 1. Flamenco Fire by Lucia Torres  [latin / passionate]   Score: 1.50 / 6.00
    ... (same high-energy songs as example 2)
@@ -321,9 +331,74 @@ pins `anthropic==0.125.0`, the newest SDK that installs on 3.9.
 
 ---
 
-## Testing Summary
+## Reliability and Evaluation
 
-**Result: 17 of 17 tests pass** (`pytest`, under a second). 15 are new in 2.0 and 2 come from 1.0.
+**Summary:** 25 of 25 automated tests pass. On a 13-case evaluation set of typical, adversarial and
+malformed requests, the agent went from **11/13 to 13/13 cases passed** (31/34 to
+34/34 criteria) after the evaluation exposed two negation bugs and I fixed the
+planner's negation rule. Average confidence rose from 0.55 to 0.6. The agent struggles
+most when the catalog is thin: when only one song matches the requested genre, #1 is right but the
+rest of the list is filler, and the confidence score drops below 0.5 to show it.
+
+Four reliability methods work together:
+
+| Method | What it does | Where |
+|---|---|---|
+| Automated tests | 25 pytest tests: guardrails, agent loop, negation parsing, confidence, the Claude loop (with a fake client), and the full evaluation set as a regression test | `tests/` |
+| Evaluation harness | Runs 13 labeled requests through the whole agent and checks each against written pass/fail criteria. Prints a markdown table and can save JSON | `src/evaluate.py` |
+| Confidence scoring | Every answer gets a 0–1 score; anything under 0.5 is flagged for human review | `confidence_score` in `src/agent.py` |
+| Logging and error handling | Every step, check result, API error and fallback is written to the log, with the reason | `logs/agent.log` |
+
+### Evaluation results
+
+Reproduce with `python -m src.evaluate` (add `--json results.json` for structured output). These
+are the results after the fix, using the rule-based planner, which is deterministic, so the
+same table comes out every run.
+
+| # | Test input | Type | Evaluation criteria | Result | Confidence |
+|---|---|---|---|---|---|
+| 1 | "chill music for studying, nothing sad" | typical | returns 5 songs; no sad/melancholic songs; all energy 0.0-0.65; #1 mood is chill | Pass | 0.82 |
+| 2 | "high energy songs for the gym, no metal" | typical | returns 5 songs; no metal songs; all energy 0.55-1.0 | Pass | 0.95 |
+| 3 | "happy acoustic songs for a summer road trip" | typical | returns 5 songs; #1 mood is happy; avg valence >= 0.6 | Pass | 0.66 |
+| 4 | "sad songs for a rainy day" | typical | returns 5 songs; #1 mood is sad/melancholic; avg valence <= 0.5 | Pass | 0.55 |
+| 5 | "romantic r&b for a date night" | typical | returns 5 songs; #1 is r&b | Pass | 0.20 |
+| 6 | "angry metal for lifting weights" | typical | returns 5 songs; #1 is metal | Pass | 0.37 |
+| 7 | "anything but country, please" | adversarial: negation phrasing | returns 5 songs; no country songs | Pass | 0.72 |
+| 8 | "I don't want anything too intense, just relaxing jazz" | adversarial: negation phrasing | returns 5 songs; no intense/angry songs; #1 is jazz | Pass | 0.46 |
+| 9 | "no rock, no pop, something electronic and moody" | adversarial: multiple exclusions | returns 5 songs; no rock/pop songs; #1 is electronic | Pass | 0.41 |
+| 10 | "k-pop music for dancing" | adversarial: genre not in catalog | returns 5 songs; 'pop' not used as the genre; flagged for human review | Pass | 0.76 |
+| 11 | "music" | adversarial: no preferences | returns 5 songs; flagged for human review | Pass | 0.73 |
+| 12 | (empty) | malformed: empty | rejected before planning, no songs; flagged for human review | Pass | n/a |
+| 13 | "xxxxxxxxxxxxxxxxxxxx... (600 chars)" | malformed: too long | rejected before planning, no songs; flagged for human review | Pass | n/a |
+
+**Before the fix (11/13):** the two failures were both negation phrasings the planner didn't understand.
+
+| # | Test input | Failure before the fix | Fix |
+|---|---|---|---|
+| 7 | "anything but country, please" | A country song (*Dusty Porch Swing*) was recommended | Added "anything but", "but not", "other than" and "apart from" as negations. A bare "but" is still not a negation, so "chill but upbeat" keeps *upbeat* |
+| 8 | "I don't want anything too intense, just relaxing jazz" | "Intense" was read as a wish: *Storm Runner* and *Gym Hero* were recommended, and #1 was rock instead of jazz | Filler words between the negation and its target ("anything too") are now skipped |
+
+### How confidence is scored
+
+`confidence = (average score of the 5 picks) / (best possible score for the fields the profile uses)`.
+That is then halved if any verification problem is left unresolved, and reduced 20% for each warning
+(a dropped genre, or no clear preferences). A profile that only sets energy can score at most 1.5
+points, so the score is measured against 1.5, not 6. Labels: high ≥ 0.75, medium ≥ 0.5, low < 0.5.
+**Low-confidence runs are flagged for human review.**
+
+What the scores showed:
+- **Confidence measures how well the list matches the request, not whether it's correct.** Cases 5, 6, 8 and 9 all pass (the
+  #1 song is right), but they score 0.20–0.46, because the catalog has only one r&b, metal, jazz or
+  electronic song, so picks 2–5 are weak matches. Flagging these is useful: it tells the listener
+  that most of the list is filler.
+- **High confidence doesn't guarantee a good list.** "K-pop for dancing" scores 0.76 because the
+  remaining preference (high energy) is easy to satisfy. That case is still flagged, by its warning
+  rather than its score, which is why both signals matter.
+- **9 of 13 runs were flagged for review:** 2 rejected inputs, 2 requests with nothing usable
+  (k-pop, "music"), and 5 low-confidence results from thin genres. That's a high rate. It reflects
+  the 20-song catalog more than the agent, and it would drop with a bigger catalog.
+
+### Unit tests
 
 | Area | What the tests check |
 |---|---|
@@ -331,9 +406,14 @@ pins `anthropic==0.125.0`, the newest SDK that installs on 3.9.
 | Profile guardrail | Out-of-range numbers are clamped, and unknown fields and genres missing from the catalog (k-pop) are dropped with warnings |
 | Output verification | Made-up song IDs, duplicates and ruled-out moods are each caught |
 | Agent loop | "Nothing sad" really excludes sad and melancholic songs, the revise step actually runs, "no metal" holds, every song shown is a real catalog song, and k-pop is flagged instead of turning into pop |
+| Negation parsing | "anything but country", "don't want anything too intense", "other than edm" and "but not too angry" all become rules, and "chill but upbeat" doesn't |
+| Confidence | A perfect match scores 1.0, unresolved issues and warnings lower it, and low-confidence runs are flagged |
 | Claude integration | With a scripted fake client: a submission containing a made-up song is rejected and the model's corrected answer is accepted, and an API failure falls back to the rule-based planner |
+| Evaluation set | All 13 evaluation cases pass, so a fixed bug can't come back unnoticed |
 
-**What didn't work at first (found by running the app, then fixed and covered by tests):**
+### What didn't work, and what I learned
+
+**Bugs found while building (by running the app; each fixed and now covered by a test):**
 - **Reasons printed one letter per line.** The engine returns its reasons as one string, and I
   looped over it as if it were a list.
 - **"k-pop" matched "pop".** My whole-word check treated the hyphen as a word break. I fixed it, and
@@ -349,7 +429,7 @@ rule-based planner gives "gym, no metal" and "k-pop for dancing" the same five s
 come down to "high energy" when no genre or mood matches.
 
 **What I learned:** most bugs showed up when I ran the app on realistic requests, not in my first
-round of tests. Every bug above became a test afterward. Testing the AI integration with a scripted
+round of tests, and the evaluation set found two more that the unit tests missed. Every bug above became a test afterward. Testing the AI integration with a scripted
 fake client was the most useful choice: it let me check how the system handles a made-up song, which
 I couldn't count on the real model to produce on demand.
 

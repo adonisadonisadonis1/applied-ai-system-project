@@ -17,7 +17,7 @@ import logging
 import os
 from pathlib import Path
 
-from src.agent import AgentResult, MusicAgent
+from src.agent import AgentResult, MusicAgent, confidence_label
 from src.recommender import (
     ACOUSTIC_WEIGHT,
     ENERGY_WEIGHT,
@@ -83,6 +83,8 @@ def print_result(result: AgentResult, show_steps: bool = False) -> None:
         print(f"Constraints: avoid {avoided or 'nothing'}, energy range {result.constraints['energy_range']}")
     print("=" * 64)
     print(result.summary)
+    if result.recommendations:
+        print(f"Confidence: {result.confidence:.2f} ({confidence_label(result.confidence)})")
     for rank, song in enumerate(result.recommendations, start=1):
         print(f"\n{rank}. {song['title']} by {song['artist']}  [{song['genre']} / {song['mood']}]")
         print(f"   Score: {song['score']:.2f} / {MAX_SCORE:.2f}")

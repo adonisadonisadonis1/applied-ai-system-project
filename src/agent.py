@@ -32,7 +32,14 @@ from src.guardrails import (
     validate_request,
     verify_recommendations,
 )
-from src.recommender import recommend_songs
+from src.recommender import (
+    ACOUSTIC_WEIGHT,
+    ENERGY_WEIGHT,
+    GENRE_WEIGHT,
+    MOOD_WEIGHT,
+    VALENCE_WEIGHT,
+    recommend_songs,
+)
 
 logger = logging.getLogger("vibecheck.agent")
 
@@ -40,6 +47,39 @@ DEFAULT_MODEL = "claude-opus-5-5"
 DEFAULT_K = 5
 MAX_REVISION_ROUNDS = 3
 MAX_CLAUDE_TURNS = 10
+
+# Confidence scoring: how well the final songs match the preferences the agent understood.
+FIELD_WEIGHTS = {"favorite_genre": GENRE_WEIGHT, "favorite_mood": MOOD_WEIGHT, "target_energy": ENERGY_WEIGHT,
+                 "target_valence": VALENCE_WEIGHT, "likes_acoustic": ACOUSTIC_WEIGHT}
+LOW_CONFIDENCE = 0.5          # below this, the run is flagged for human review
+UNRESOLVED_ISSUE_PENALTY = 0.5
+WARNING_PENALTY = 0.8         # per warning (dropped genre, no clear preferences, ...)
+
+
+def confidence_score(profile: Dict, recommendations: List[Dict], issues: List[Dict], warnings: List[str]) -> float:
+    """
+    Return a 0-1 confidence for a final answer.
+
+    Base: the average score of the recommended songs divided by the best score possible for the
+    fields in this profile (a profile with only target_energy can score at most 1.5, not 6).
+    Then multiply by penalties: unresolved verification issues halve it, and each warning takes 20% off,
+    because a warning means part of the request was dropped or guessed.
+    """
+    if not recommendations:
+        return 0.0
+    max_possible = sum(weight for name, weight in FIELD_WEIGHTS.items() if name in profile)
+    if max_possible == 0:
+        return 0.0
+    average = sum(song["score"] for song in recommendations) / len(recommendations)
+    confidence = min(1.0, average / max_possible)
+    if issues:
+        confidence *= UNRESOLVED_ISSUE_PENALTY
+    confidence *= WARNING_PENALTY ** len(warnings)
+    return round(confidence, 2)
+
+
+def confidence_label(confidence: float) -> str:
+    return "high" if confidence >= 0.75 else "medium" if confidence >= LOW_CONFIDENCE else "low"
 
 
 @dataclass
@@ -56,6 +96,7 @@ class AgentResult:
     warnings: List[str] = field(default_factory=list)
     issues: List[Dict] = field(default_factory=list)
     needs_review: bool = False
+    confidence: float = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -151,8 +192,14 @@ FILLER_WORDS = {"some", "any", "good", "new", "more", "the", "my", "background",
 GENRE_ALIASES = {"hip-hop": "hip hop", "hiphop": "hip hop", "rap": "hip hop", "rnb": "r&b",
                  "lo-fi": "lofi", "dance music": "edm", "indie": "indie pop"}
 
-NEGATION = re.compile(r"\b(?:no|not|nothing|without|avoid|skip|except|hate|don't want|dont want)\s+"
-                      r"(?:too\s+|any\s+|more\s+)?([a-z&-]+(?:\s[a-z&-]+)?)")
+# "nothing sad", "no metal", "anything but country", "don't want anything too intense".
+# Filler words between the negation and the thing being ruled out are skipped. A bare "but" is not a
+# negation ("chill but upbeat" wants upbeat), so only "anything but" / "but not" count.
+NEGATION = re.compile(
+    r"\b(?:no|not|nothing|without|avoid|skip|except|hate|don't want|dont want|anything but|but not|"
+    r"other than|apart from)\s+"
+    r"(?:(?:anything|something|any|too|more|really|very|super|overly)\s+)*"
+    r"([a-z&-]+(?:\s[a-z&-]+)?)")
 
 
 def _find(text: str, phrase: str) -> int:
@@ -516,15 +563,18 @@ class MusicAgent:
     def _finish(self, request, planner, ids, profile, constraints, summary, warnings, steps, tools, record):
         # Final verification runs in code no matter which planner produced the answer.
         issues = tools.check(ids, constraints)
-        # Human-in-the-loop: flag runs where the catalog could not deliver what was asked.
-        needs_review = bool(issues) or any(
-            "no clear music preferences" in w or "not a genre in the catalog" in w for w in warnings)
-        record("verify", "final verification", {"issues": issues, "needs_review": needs_review})
         real_ids = [song_id for song_id in ids if song_id in tools.by_id]  # never display a made-up song
+        recommendations = tools.details(real_ids, profile)
+        confidence = confidence_score(profile, recommendations, issues, warnings)
+        # Human-in-the-loop: flag runs where the catalog could not deliver what was asked,
+        # or where the agent is not confident in its own answer.
+        needs_review = bool(issues) or confidence < LOW_CONFIDENCE or any(
+            "no clear music preferences" in w or "not a genre in the catalog" in w for w in warnings)
+        record("verify", "final verification",
+               {"issues": issues, "confidence": confidence, "needs_review": needs_review})
         return AgentResult(request=request, planner=planner, profile=profile, constraints=constraints,
-                           recommendations=tools.details(real_ids, profile),
-                           summary=summary, steps=steps, warnings=warnings, issues=issues,
-                           needs_review=needs_review)
+                           recommendations=recommendations, summary=summary, steps=steps, warnings=warnings,
+                           issues=issues, needs_review=needs_review, confidence=confidence)
 
     @staticmethod
     def _template_summary(profile: Dict, constraints: Dict, warnings: List[str], replaced: int) -> str:
