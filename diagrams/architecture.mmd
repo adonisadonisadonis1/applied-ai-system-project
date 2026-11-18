@@ -1,0 +1,63 @@
+%% VibeCheck 2.0 system architecture
+%% Solid arrows: data flow (input -> plan -> act -> check -> revise -> output).
+%% Dotted arrows: logging, automated testing, and human review of AI results.
+
+flowchart TD
+    USER(["Listener: plain-English request<br/>'chill music for studying, nothing sad'"])
+
+    subgraph AGENT["Agent  (src/agent.py + src/guardrails.py)"]
+        VALIDATE{"Input guardrail<br/>empty, too long, or not text?"}
+        CLAUDE["PLAN: Claude planner<br/>tool use, when an API key is set"]
+        RULES["PLAN: Rule-based planner<br/>offline keyword + negation parsing"]
+        SANITIZE["Profile guardrail<br/>clamp numbers, drop genres not in catalog"]
+        ACT["ACT: call the recommend tool"]
+        CHECK{"CHECK: verify picks<br/>real song? duplicate?<br/>ruled-out mood or genre? energy?"}
+        REVISE["REVISE: exclude failing songs<br/>retry, max 3 rounds"]
+        FINAL{"Final verification in code<br/>every song id must come from the tool"}
+    end
+
+    subgraph ENGINE["Scoring engine  (VibeCheck 1.0, src/recommender.py)"]
+        DATA[("data/songs.csv<br/>20 songs")]
+        SCORE["score_song + recommend_songs<br/>top 5, score out of 6, with reasons"]
+    end
+
+    OUTPUT(["Output: top 5 songs<br/>with scores, reasons, and a summary"])
+
+    subgraph HUMAN["Human-in-the-loop"]
+        READER["Listener reads the reasons<br/>behind every score"]
+        REVIEW["Human review<br/>of flagged runs"]
+    end
+
+    subgraph QA["Testing and logging"]
+        TESTS["pytest: tests/test_agent.py + test_recommender.py<br/>guardrails, revise loop, fake-Claude loop, scoring"]
+        LOG[("logs/agent.log<br/>every plan, act, check, revise step")]
+    end
+
+    USER --> VALIDATE
+    VALIDATE -- "rejected" --> REVIEW
+    VALIDATE -- "accepted, API key set" --> CLAUDE
+    VALIDATE -- "accepted, no key" --> RULES
+    CLAUDE -- "API error or refusal" --> RULES
+    CLAUDE --> SANITIZE
+    RULES --> SANITIZE
+    SANITIZE --> ACT
+    ACT --> SCORE
+    DATA --> SCORE
+    SCORE --> CHECK
+    CHECK -- "problems found" --> REVISE
+    REVISE --> ACT
+    CHECK -- "passed" --> FINAL
+    FINAL --> OUTPUT
+    OUTPUT --> READER
+    FINAL -- "issues remain or catalog<br/>can't deliver: needs_review" --> REVIEW
+
+    AGENT -. "every step logged" .-> LOG
+    AGENT -. "checked by" .-> TESTS
+    ENGINE -. "checked by" .-> TESTS
+
+    classDef human fill:#fff4d6,stroke:#c9a227,color:#3d2f00
+    classDef guard fill:#fde2e2,stroke:#c24a4a,color:#4d0d0d
+    classDef qa fill:#e3f0ff,stroke:#3a78c2,color:#0d2a4d
+    class USER,READER,REVIEW human
+    class VALIDATE,SANITIZE,CHECK,FINAL guard
+    class TESTS,LOG qa
