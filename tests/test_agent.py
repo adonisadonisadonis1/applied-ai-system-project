@@ -26,7 +26,8 @@ def offline_agent() -> MusicAgent:
 
 # --- Input guardrails -------------------------------------------------------
 
-@pytest.mark.parametrize("bad", ["", "   ", None, 42, "x" * (MAX_REQUEST_CHARS + 1)])
+@pytest.mark.parametrize("bad", ["", "   ", None, 42, "x" * (MAX_REQUEST_CHARS + 1)],
+                         ids=["empty", "blank", "none", "number", "too-long"])
 def test_validate_request_rejects_unusable_input(bad):
     with pytest.raises(GuardrailError):
         validate_request(bad)

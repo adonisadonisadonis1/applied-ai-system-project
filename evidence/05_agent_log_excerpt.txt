@@ -1,0 +1,15 @@
+# logs/agent.log entries for one run: "chill music for studying, nothing sad"
+# Generated 2026-11-17 19:24 by scripts/generate_evidence.sh
+# Python 3.9.6, rule-based planner (--offline)
+
+2026-11-17 19:24:48,649 INFO vibecheck.agent: INPUT | request accepted | {"request": "chill music for studying, nothing sad"}
+2026-11-17 19:24:48,653 INFO vibecheck.agent: PLAN | rule-based planner built a profile | {"notes": ["'nothing sad' -> avoid mood sad", "planned profile {'favorite_mood': 'chill', 'target_energy': 0.35}"], "profile": {"favorite_mood": "chill", "target_energy": 0.35}, "constraints": {"avoid_moods": ["melancholic", "sad"], "avoid_genres": [], "energy_range": [0.15, 0.55]}, "warnings": []}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: ACT | called the scoring engine (round 1) | {"excluded": [], "returned": [4, 6, 2, 20, 7]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: CHECK | verified round 1 | {"issues": [{"song_id": 20, "problem": "mood 'melancholic' was ruled out by the listener"}]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: REVISE | excluding 1 song(s) that broke a constraint | {"excluded": [20]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: ACT | called the scoring engine (round 2) | {"excluded": [20], "returned": [4, 6, 2, 7, 18]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: CHECK | verified round 2 | {"issues": [{"song_id": 18, "problem": "mood 'sad' was ruled out by the listener"}]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: REVISE | excluding 1 song(s) that broke a constraint | {"excluded": [18]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: ACT | called the scoring engine (round 3) | {"excluded": [20, 18], "returned": [4, 6, 2, 7, 9]}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: CHECK | verified round 3 | {"issues": []}
+2026-11-17 19:24:48,654 INFO vibecheck.agent: VERIFY | final verification | {"issues": [], "confidence": 0.82, "needs_review": false}

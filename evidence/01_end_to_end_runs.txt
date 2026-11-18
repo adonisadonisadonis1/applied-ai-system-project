@@ -1,0 +1,137 @@
+# End-to-end runs: plain-English input -> agent steps -> recommendations
+# Generated 2026-11-17 19:24 by scripts/generate_evidence.sh
+# Python 3.9.6, rule-based planner (--offline)
+
+$ python -m src.main --offline --steps "chill music for studying, nothing sad"
+Planner: rule-based (--offline)
+================================================================
+Request: chill music for studying, nothing sad
+Planner: rule-based
+Profile: {'favorite_mood': 'chill', 'target_energy': 0.35}
+Constraints: avoid ['melancholic', 'sad'], energy range [0.15, 0.55]
+================================================================
+Looked for a chill mood, low energy. Ruled out: melancholic, sad. Replaced 2 song(s) that broke your constraints.
+Confidence: 0.82 (high)
+
+1. Library Rain by Paper Lanterns  [lofi / chill]
+   Score: 2.50 / 6.00
+     - mood match: chill (+1.0)
+     - energy 0.35 vs your 0.35 (+1.50)
+
+2. Spacewalk Thoughts by Orbit Bloom  [ambient / chill]
+   Score: 2.40 / 6.00
+     - mood match: chill (+1.0)
+     - energy 0.28 vs your 0.35 (+1.40)
+
+3. Midnight Coding by LoRoom  [lofi / chill]
+   Score: 2.40 / 6.00
+     - mood match: chill (+1.0)
+     - energy 0.42 vs your 0.35 (+1.40)
+
+4. Coffee Shop Stories by Slow Stereo  [jazz / relaxed]
+   Score: 1.47 / 6.00
+     - energy 0.37 vs your 0.35 (+1.47)
+
+5. Focus Flow by LoRoom  [lofi / focused]
+   Score: 1.42 / 6.00
+     - energy 0.40 vs your 0.35 (+1.42)
+
+Agent steps:
+   1. [input] request accepted
+   2. [plan] rule-based planner built a profile
+   3. [act] called the scoring engine (round 1)
+   4. [check] verified round 1
+   5. [revise] excluding 1 song(s) that broke a constraint
+   6. [act] called the scoring engine (round 2)
+   7. [check] verified round 2
+   8. [revise] excluding 1 song(s) that broke a constraint
+   9. [act] called the scoring engine (round 3)
+  10. [check] verified round 3
+  11. [verify] final verification
+
+Full step log: logs/agent.log
+
+$ python -m src.main --offline --steps "high energy songs for the gym, no metal"
+Planner: rule-based (--offline)
+================================================================
+Request: high energy songs for the gym, no metal
+Planner: rule-based
+Profile: {'target_energy': 0.85}
+Constraints: avoid ['metal'], energy range [0.65, 1.0]
+================================================================
+Looked for high energy. Ruled out: metal.
+Confidence: 0.95 (high)
+
+1. Flamenco Fire by Lucia Torres  [latin / passionate]
+   Score: 1.50 / 6.00
+     - energy 0.85 vs your 0.85 (+1.50)
+
+2. Sunrise City by Neon Echo  [pop / happy]
+   Score: 1.46 / 6.00
+     - energy 0.82 vs your 0.85 (+1.46)
+
+3. Storm Runner by Voltline  [rock / intense]
+   Score: 1.41 / 6.00
+     - energy 0.91 vs your 0.85 (+1.41)
+
+4. Concrete Crown by Kilo Verse  [hip hop / confident]
+   Score: 1.40 / 6.00
+     - energy 0.78 vs your 0.85 (+1.40)
+
+5. Gym Hero by Max Pulse  [pop / intense]
+   Score: 1.38 / 6.00
+     - energy 0.93 vs your 0.85 (+1.38)
+
+Agent steps:
+   1. [input] request accepted
+   2. [plan] rule-based planner built a profile
+   3. [act] called the scoring engine (round 1)
+   4. [check] verified round 1
+   5. [verify] final verification
+
+Full step log: logs/agent.log
+
+$ python -m src.main --offline --steps "I don't want anything too intense, just relaxing jazz"
+Planner: rule-based (--offline)
+================================================================
+Request: I don't want anything too intense, just relaxing jazz
+Planner: rule-based
+Profile: {'favorite_genre': 'jazz', 'favorite_mood': 'relaxed', 'target_energy': 0.35}
+Constraints: avoid ['angry', 'intense'], energy range [0.15, 0.55]
+================================================================
+Looked for jazz songs, a relaxed mood, low energy. Ruled out: angry, intense.
+Confidence: 0.46 (low)
+
+1. Coffee Shop Stories by Slow Stereo  [jazz / relaxed]
+   Score: 4.47 / 6.00
+     - genre match: jazz (+2.0)
+     - mood match: relaxed (+1.0)
+     - energy 0.37 vs your 0.35 (+1.47)
+
+2. Library Rain by Paper Lanterns  [lofi / chill]
+   Score: 1.50 / 6.00
+     - energy 0.35 vs your 0.35 (+1.50)
+
+3. Grey Window by Mute Hours  [electronic / melancholic]
+   Score: 1.47 / 6.00
+     - energy 0.33 vs your 0.35 (+1.47)
+
+4. Paper Boats by Wren & Willow  [folk / sad]
+   Score: 1.42 / 6.00
+     - energy 0.30 vs your 0.35 (+1.42)
+
+5. Focus Flow by LoRoom  [lofi / focused]
+   Score: 1.42 / 6.00
+     - energy 0.40 vs your 0.35 (+1.42)
+
+!! Flagged for human review: the agent could not fully satisfy this request.
+
+Agent steps:
+   1. [input] request accepted
+   2. [plan] rule-based planner built a profile
+   3. [act] called the scoring engine (round 1)
+   4. [check] verified round 1
+   5. [verify] final verification
+
+Full step log: logs/agent.log
+

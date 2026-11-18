@@ -1,0 +1,25 @@
+# Reliability evaluation: 13 labeled requests
+# Generated 2026-11-17 19:24 by scripts/generate_evidence.sh
+# Python 3.9.6, rule-based planner (--offline)
+
+$ python -m src.evaluate --json evidence/03_evaluation.json
+| # | Test input | Type | Evaluation criteria | Result | Confidence |
+|---|---|---|---|---|---|
+| 1 | "chill music for studying, nothing sad" | typical | returns 5 songs; no sad/melancholic songs; all energy 0.0-0.65; #1 mood is chill | Pass | 0.82 |
+| 2 | "high energy songs for the gym, no metal" | typical | returns 5 songs; no metal songs; all energy 0.55-1.0 | Pass | 0.95 |
+| 3 | "happy acoustic songs for a summer road trip" | typical | returns 5 songs; #1 mood is happy; avg valence >= 0.6 | Pass | 0.66 |
+| 4 | "sad songs for a rainy day" | typical | returns 5 songs; #1 mood is sad/melancholic; avg valence <= 0.5 | Pass | 0.55 |
+| 5 | "romantic r&b for a date night" | typical | returns 5 songs; #1 is r&b | Pass | 0.20 |
+| 6 | "angry metal for lifting weights" | typical | returns 5 songs; #1 is metal | Pass | 0.37 |
+| 7 | "anything but country, please" | adversarial: negation phrasing | returns 5 songs; no country songs | Pass | 0.72 |
+| 8 | "I don't want anything too intense, just relaxing jazz" | adversarial: negation phrasing | returns 5 songs; no intense/angry songs; #1 is jazz | Pass | 0.46 |
+| 9 | "no rock, no pop, something electronic and moody" | adversarial: multiple exclusions | returns 5 songs; no rock/pop songs; #1 is electronic | Pass | 0.41 |
+| 10 | "k-pop music for dancing" | adversarial: genre not in catalog | returns 5 songs; 'pop' not used as the genre; flagged for human review | Pass | 0.76 |
+| 11 | "music" | adversarial: no preferences | returns 5 songs; flagged for human review | Pass | 0.73 |
+| 12 | (empty) | malformed: empty | rejected before planning, no songs; flagged for human review | Pass | n/a |
+| 13 | "xxxxxxxxxxxxxxxxxxxx... (600 chars)" | malformed: too long | rejected before planning, no songs; flagged for human review | Pass | n/a |
+
+**13 of 13 cases passed** (34 of 34 criteria). Average confidence 0.6; 9 runs flagged for human review; 4 revision rounds used.
+
+Saved structured results to evidence/03_evaluation.json
+

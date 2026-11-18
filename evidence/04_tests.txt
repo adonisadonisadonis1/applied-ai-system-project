@@ -1,0 +1,40 @@
+# Automated tests
+# Generated 2026-11-17 19:24 by scripts/generate_evidence.sh
+# Python 3.9.6, rule-based planner (--offline)
+
+$ pytest -v
+============================= test session starts ==============================
+platform darwin -- Python 3.9.6, pytest-8.4.2, pluggy-1.6.0 -- /Users/adonis/applied-ai-system-project/.venv/bin/python
+rootdir: /Users/adonis/applied-ai-system-project
+configfile: pytest.ini
+plugins: anyio-4.12.1
+collecting ... collected 25 items
+
+tests/test_agent.py::test_validate_request_rejects_unusable_input[empty] PASSED [  4%]
+tests/test_agent.py::test_validate_request_rejects_unusable_input[blank] PASSED [  8%]
+tests/test_agent.py::test_validate_request_rejects_unusable_input[none] PASSED [ 12%]
+tests/test_agent.py::test_validate_request_rejects_unusable_input[number] PASSED [ 16%]
+tests/test_agent.py::test_validate_request_rejects_unusable_input[too-long] PASSED [ 20%]
+tests/test_agent.py::test_agent_rejects_empty_request_without_recommending PASSED [ 24%]
+tests/test_agent.py::test_sanitize_profile_clamps_numbers_and_drops_unknown_genre PASSED [ 28%]
+tests/test_agent.py::test_verify_flags_hallucinated_duplicate_and_ruled_out_songs PASSED [ 32%]
+tests/test_agent.py::test_planner_reads_negation_as_constraint_not_preference PASSED [ 36%]
+tests/test_agent.py::test_agent_revises_until_constraints_pass PASSED    [ 40%]
+tests/test_agent.py::test_agent_respects_genre_exclusion PASSED          [ 44%]
+tests/test_agent.py::test_agent_flags_genre_the_catalog_lacks_for_human_review PASSED [ 48%]
+tests/test_agent.py::test_every_recommendation_is_a_real_catalog_song PASSED [ 52%]
+tests/test_agent.py::test_claude_loop_rejects_hallucinated_song_then_accepts_valid_submission PASSED [ 56%]
+tests/test_agent.py::test_claude_failure_falls_back_to_rule_based_planner PASSED [ 60%]
+tests/test_agent.py::test_planner_handles_negation_phrasings[anything but country, please-avoided_genres0-avoided_moods0] PASSED [ 64%]
+tests/test_agent.py::test_planner_handles_negation_phrasings[I don't want anything too intense, just relaxing jazz-avoided_genres1-avoided_moods1] PASSED [ 68%]
+tests/test_agent.py::test_planner_handles_negation_phrasings[party music other than edm-avoided_genres2-avoided_moods2] PASSED [ 72%]
+tests/test_agent.py::test_planner_handles_negation_phrasings[rock but not too angry-avoided_genres3-avoided_moods3] PASSED [ 76%]
+tests/test_agent.py::test_plain_but_is_not_treated_as_negation PASSED    [ 80%]
+tests/test_agent.py::test_confidence_is_full_for_perfect_matches_and_drops_with_problems PASSED [ 84%]
+tests/test_agent.py::test_low_confidence_is_flagged_for_human_review PASSED [ 88%]
+tests/test_agent.py::test_evaluation_suite_passes PASSED                 [ 92%]
+tests/test_recommender.py::test_recommend_returns_songs_sorted_by_score PASSED [ 96%]
+tests/test_recommender.py::test_explain_recommendation_returns_non_empty_string PASSED [100%]
+
+============================== 25 passed in 0.31s ==============================
+

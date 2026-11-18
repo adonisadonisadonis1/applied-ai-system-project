@@ -75,7 +75,8 @@ def setup_logging(log_path: Path = LOG_PATH) -> None:
 def print_result(result: AgentResult, show_steps: bool = False) -> None:
     """Print one agent result: summary, songs with reasons, warnings, and review flag."""
     print("=" * 64)
-    print(f"Request: {result.request}")
+    shown = result.request if len(result.request) <= 80 else f"{result.request[:60]}... ({len(result.request)} chars)"
+    print(f"Request: {shown}")
     print(f"Planner: {result.planner}")
     print(f"Profile: {result.profile}")
     avoided = result.constraints["avoid_moods"] + result.constraints["avoid_genres"]

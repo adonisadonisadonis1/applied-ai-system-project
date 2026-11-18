@@ -1,0 +1,339 @@
+{
+  "summary": {
+    "cases": 13,
+    "passed": 13,
+    "criteria": 34,
+    "criteria_passed": 34,
+    "average_confidence": 0.6,
+    "flagged_for_review": 9,
+    "revision_rounds": 4
+  },
+  "results": [
+    {
+      "id": 1,
+      "input": "\"chill music for studying, nothing sad\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "no sad/melancholic songs",
+          "passed": true,
+          "detail": "ok"
+        },
+        {
+          "criterion": "all energy 0.0-0.65",
+          "passed": true,
+          "detail": "ok"
+        },
+        {
+          "criterion": "#1 mood is chill",
+          "passed": true,
+          "detail": "top mood=chill"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.82,
+      "needs_review": false,
+      "revisions": 2
+    },
+    {
+      "id": 2,
+      "input": "\"high energy songs for the gym, no metal\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "no metal songs",
+          "passed": true,
+          "detail": "ok"
+        },
+        {
+          "criterion": "all energy 0.55-1.0",
+          "passed": true,
+          "detail": "ok"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.95,
+      "needs_review": false,
+      "revisions": 0
+    },
+    {
+      "id": 3,
+      "input": "\"happy acoustic songs for a summer road trip\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "#1 mood is happy",
+          "passed": true,
+          "detail": "top mood=happy"
+        },
+        {
+          "criterion": "avg valence >= 0.6",
+          "passed": true,
+          "detail": "avg valence=0.74"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.66,
+      "needs_review": false,
+      "revisions": 0
+    },
+    {
+      "id": 4,
+      "input": "\"sad songs for a rainy day\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "#1 mood is sad/melancholic",
+          "passed": true,
+          "detail": "top mood=sad"
+        },
+        {
+          "criterion": "avg valence <= 0.5",
+          "passed": true,
+          "detail": "avg valence=0.31"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.55,
+      "needs_review": false,
+      "revisions": 0
+    },
+    {
+      "id": 5,
+      "input": "\"romantic r&b for a date night\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "#1 is r&b",
+          "passed": true,
+          "detail": "top genre=r&b"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.2,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 6,
+      "input": "\"angry metal for lifting weights\"",
+      "kind": "typical",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "#1 is metal",
+          "passed": true,
+          "detail": "top genre=metal"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.37,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 7,
+      "input": "\"anything but country, please\"",
+      "kind": "adversarial: negation phrasing",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "no country songs",
+          "passed": true,
+          "detail": "ok"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.72,
+      "needs_review": true,
+      "revisions": 1
+    },
+    {
+      "id": 8,
+      "input": "\"I don't want anything too intense, just relaxing jazz\"",
+      "kind": "adversarial: negation phrasing",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "no intense/angry songs",
+          "passed": true,
+          "detail": "ok"
+        },
+        {
+          "criterion": "#1 is jazz",
+          "passed": true,
+          "detail": "top genre=jazz"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.46,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 9,
+      "input": "\"no rock, no pop, something electronic and moody\"",
+      "kind": "adversarial: multiple exclusions",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "no rock/pop songs",
+          "passed": true,
+          "detail": "ok"
+        },
+        {
+          "criterion": "#1 is electronic",
+          "passed": true,
+          "detail": "top genre=electronic"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.41,
+      "needs_review": true,
+      "revisions": 1
+    },
+    {
+      "id": 10,
+      "input": "\"k-pop music for dancing\"",
+      "kind": "adversarial: genre not in catalog",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "'pop' not used as the genre",
+          "passed": true,
+          "detail": "favorite_genre=None"
+        },
+        {
+          "criterion": "flagged for human review",
+          "passed": true,
+          "detail": "needs_review=True"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.76,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 11,
+      "input": "\"music\"",
+      "kind": "adversarial: no preferences",
+      "planner": "rule-based",
+      "criteria": [
+        {
+          "criterion": "returns 5 songs",
+          "passed": true,
+          "detail": "5 songs"
+        },
+        {
+          "criterion": "flagged for human review",
+          "passed": true,
+          "detail": "needs_review=True"
+        }
+      ],
+      "passed": true,
+      "confidence": 0.73,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 12,
+      "input": "(empty)",
+      "kind": "malformed: empty",
+      "planner": "none",
+      "criteria": [
+        {
+          "criterion": "rejected before planning, no songs",
+          "passed": true,
+          "detail": "planner=none"
+        },
+        {
+          "criterion": "flagged for human review",
+          "passed": true,
+          "detail": "needs_review=True"
+        }
+      ],
+      "passed": true,
+      "confidence": null,
+      "needs_review": true,
+      "revisions": 0
+    },
+    {
+      "id": 13,
+      "input": "\"xxxxxxxxxxxxxxxxxxxx... (600 chars)\"",
+      "kind": "malformed: too long",
+      "planner": "none",
+      "criteria": [
+        {
+          "criterion": "rejected before planning, no songs",
+          "passed": true,
+          "detail": "planner=none"
+        },
+        {
+          "criterion": "flagged for human review",
+          "passed": true,
+          "detail": "needs_review=True"
+        }
+      ],
+      "passed": true,
+      "confidence": null,
+      "needs_review": true,
+      "revisions": 0
+    }
+  ]
+}
