@@ -1,6 +1,30 @@
-# 🎵 Music Recommender Simulation
+# 🎵 VibeCheck 2.0: Agentic Music Recommender
 
-## Project Summary
+## What's New in 2.0
+
+VibeCheck 2.0 extends the Module 3 recommender into an **agentic workflow**. You describe what you
+want in plain English ("chill music for studying, nothing sad"), and an agent:
+
+1. **Plans**: turns the request into a taste profile plus constraints (moods/genres to avoid, an energy range).
+2. **Acts**: calls the original VibeCheck scoring engine as a tool.
+3. **Checks**: verifies every pick is a real catalog song, is not a duplicate, and obeys the constraints.
+4. **Revises**: excludes songs that failed the check and asks the engine again (up to 3 rounds).
+
+The planner is **Claude** (`claude-opus-5-5`, via tool use) when `ANTHROPIC_API_KEY` is set, and a
+deterministic **rule-based planner** otherwise or if the API fails, so the app always runs.
+Guardrails reject empty or oversized requests, clamp out-of-range numbers, drop genres the catalog
+does not have, and block made-up song ids. Requests the catalog cannot satisfy are **flagged for
+human review**. Every step is logged to `logs/agent.log`.
+
+| File | Role |
+|---|---|
+| `src/agent.py` | Agent loop, Claude planner, rule-based planner, tool wrappers |
+| `src/guardrails.py` | Input validation, profile sanitizing, output verification |
+| `src/recommender.py` | Original VibeCheck 1.0 scoring engine (unchanged, used as a tool) |
+| `src/main.py` | Command-line entry point |
+| `tests/test_agent.py` | Guardrail, agent-loop, and Claude-loop tests (Claude is faked, no key needed) |
+
+## Original Project Summary (1.0)
 
 **VibeCheck 1.0** is a small, content-based music recommender that runs in the terminal. It
 loads a 20-song catalog from `data/songs.csv`, scores every song against a user's taste profile
@@ -154,34 +178,52 @@ Example: *Midnight Coding* (lofi, chill, energy 0.42) for the study profile scor
 
 ### Setup
 
-1. Create a virtual environment (optional but recommended):
+Requires Python 3.9 or newer. Run every command from the project root.
+
+1. Create and activate a virtual environment:
 
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+   .\.venv\Scripts\Activate.ps1   # Windows PowerShell
    ```
 
-2. Install dependencies
+2. Install dependencies:
+
+   ```bash
+   python -m pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+3. (Optional) Let Claude plan requests. Without a key, the rule-based planner runs instead and
+   everything else works the same.
+
+   ```bash
+   export ANTHROPIC_API_KEY="your-key-here"     # Mac or Linux
+   $env:ANTHROPIC_API_KEY="your-key-here"       # Windows PowerShell
+   ```
+
+   To use a different Claude model, set `VIBECHECK_MODEL` (default `claude-opus-5-5`).
+
+### Running the App
 
 ```bash
-pip install -r requirements.txt
+python -m src.main "chill music for studying, nothing sad"   # one request
+python -m src.main "gym bangers, no metal" --steps           # also print the plan/act/check steps
+python -m src.main --offline "happy acoustic songs"          # force the rule-based planner
+python -m src.main                                           # run four example requests
+python -m src.main --profiles                                # original 1.0 profile demo
 ```
 
-3. Run the app:
-
-```bash
-python -m src.main
-```
+Each run appends its full step trace to `logs/agent.log`.
 
 ### Running Tests
-
-Run the tests from the project root with:
 
 ```bash
 pytest
 ```
 
+The tests never call the real API: the Claude planner is tested with a scripted fake client.
 `pytest.ini` adds the project root to the import path so the tests can import `src`.
 
 ---
